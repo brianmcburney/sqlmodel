@@ -222,6 +222,7 @@ if IS_PYDANTIC_V2:
         # new_obj = cls.__new__(cls)
         cls = type(self_instance)
         old_dict = self_instance.__dict__.copy()
+        validated_values = self_instance.model_validate(values)
         # End SQLModel override
 
         fields_values: Dict[str, Any] = {}
@@ -230,9 +231,9 @@ if IS_PYDANTIC_V2:
         ] = {}  # keeping this separate from `fields_values` helps us compute `_fields_set`
         for name, field in cls.model_fields.items():
             if field.alias and field.alias in values:
-                fields_values[name] = values.pop(field.alias)
+                fields_values[name] = getattr(validated_values, field.alias)
             elif name in values:
-                fields_values[name] = values.pop(name)
+                fields_values[name] = getattr(validated_values, name)
             elif not field.is_required():
                 defaults[name] = field.get_default(call_default_factory=True)
         if _fields_set is None:
